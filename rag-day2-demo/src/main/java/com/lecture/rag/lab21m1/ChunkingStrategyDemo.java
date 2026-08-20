@@ -2,12 +2,15 @@ package com.lecture.rag.lab21m1;
 
 import org.springframework.ai.document.Document;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -40,6 +43,10 @@ public class ChunkingStrategyDemo implements CommandLineRunner {
         System.out.println();
         System.out.println("################ 4. Semantic Chunking (문장 간 유사도 급락 지점) ################");
         semanticChunking();
+
+        System.out.println();
+        System.out.println("################ 5. Markdown 제목 구조 기반 청킹 (자사주) ################");
+        markdownStructureBased();
     }
 
     private Document loadFullText(String file) {
@@ -50,6 +57,15 @@ public class ChunkingStrategyDemo implements CommandLineRunner {
         // (예: "물탱크    용량은") 청킹 전에 공백을 정규화하지 않으면 실제 글자 수보다 훨씬 길게 잡힘
         combined = combined.replaceAll("[ \\t]+", " ");
         return new Document(combined);
+    }
+
+    private Document loadMarkdown(String file) {
+        ClassPathResource resource = new ClassPathResource("scenarios/" + file);
+        try (var input = resource.getInputStream()) {
+            return new Document(new String(input.readAllBytes(), StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new IllegalStateException("Markdown 파일을 읽을 수 없습니다: " + file, e);
+        }
     }
 
     private void compareFixedVsRecursive() {
@@ -109,6 +125,17 @@ public class ChunkingStrategyDemo implements CommandLineRunner {
 
         List<Document> chunks = chunker.split(doc);
         System.out.println("threshold=0.7 기준 생성된 청크 수: " + chunks.size());
+    }
+
+    private void markdownStructureBased() {
+        Document doc = loadMarkdown("9-wiki-treasury-stock.md");
+        MarkdownHeadingSplitter splitter = new MarkdownHeadingSplitter(600);
+        List<Document> chunks = splitter.split(doc);
+
+        System.out.println("청크 수: " + chunks.size() + " (#/##/### 제목 경계, 최대 600자)");
+        for (int i = 0; i < chunks.size(); i++) {
+            System.out.println("  [" + i + "] " + preview(chunks.get(i).getText(), 120));
+        }
     }
 
     private String preview(String text, int len) {

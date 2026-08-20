@@ -5,12 +5,13 @@
 #        ./run.sh lab21                  (PGVector 인덱싱, 콘솔 — 먼저 docker compose up -d 필요)
 #        ./run.sh lab22                  (리랭크 데모, 콘솔)
 #        ./run.sh query-transform        (M2.5 QueryTransformer — 재작성 + Transform/Retrieve/Rerank 파이프라인, 콘솔)
+#        ./run.sh lab21-rerank           (PGVector 검색 + LLM 리랭크, 콘솔)
 #        ./run.sh lab23                  (RAG를 도구로 쓰기 — Agentic RAG, 콘솔)
 set -euo pipefail
 cd "$(dirname "$0")"
 
 case "${1:-}" in
-  chunking-strategies|mmr|lab21|lab22|query-transform|lab23)
+  chunking-strategies|mmr|lab21|lab21-rerank|lab22|query-transform|lab23)
     ./mvnw spring-boot:run -Dspring-boot.run.profiles="$1"
     ;;
   *)
